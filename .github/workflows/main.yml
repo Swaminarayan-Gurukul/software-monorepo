@@ -1,0 +1,43 @@
+name: Deploy Apps to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app:
+          - name: attendance-report
+            path: attendance-report/attendance-web-app
+            dist: dist
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.app.path }}/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: ${{ matrix.app.path }}
+
+      - name: Build
+        run: npm run build
+        working-directory: ${{ matrix.app.path }}
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ${{ matrix.app.path }}/${{ matrix.app.dist }}
+          target-folder: ${{ matrix.app.name }}
+          clean: false # Don't wipe other apps
